@@ -24,5 +24,4 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    Procs = [],
-    {ok, {#{}, Procs}}.
+    {ok, {#{}, []}}.
