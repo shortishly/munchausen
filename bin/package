@@ -19,7 +19,7 @@ CODENAME=$(lsb_release --codename --short | perl  -ne 'print lc')
 
 APP=$(bin/app)
 ARCH=amd64
-OWNER=shoritshly
+OWNER=shortishly
 PROJECT=${OWNER}/${APP}
 URL=https://github.com/${PROJECT}
 PREFIX=/opt
@@ -37,8 +37,8 @@ fpm --verbose \
     -C _rel \
     --url ${URL} \
     --architecture ${ARCH} \
-    --name $(bin/app) \
-    -v $(bin/version) \
+    --name ${APP} \
+    -v ${VERSION} \
     --prefix ${PREFIX} .
 
 package_cloud yank \
@@ -52,4 +52,4 @@ package_cloud push \
 curl -H "Content-Type: application/json" \
      --data '{"source_type": "Branch", "source_name": "master"}' \
      -X POST \
-     https://registry.hub.docker.com/u/${OWNER}/${APP}/trigger/${DOCKER_TRIGGER}/
+     https://registry.hub.docker.com/u/${PROJECT}/trigger/${DOCKER_TRIGGER}/
