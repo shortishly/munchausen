@@ -31,7 +31,7 @@ init(Req0, #{prefix := Prefix, balancer := Balancer} = State) ->
                      Prefix/binary,
                      (cowboy_req:host(Req0))/binary
                    >>,
-                   cowboy_req:path(Req0)) of
+                  cowboy_req:path(Req0)) of
 
         not_found ->
             Req1 = cowboy_req:reply(404,
