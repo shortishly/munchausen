@@ -23,7 +23,7 @@ DEPS = \
 	gun \
 	recon
 
-dep_cowboy = git https://github.com/ninenines/cowboy.git master
+dep_cowboy = git https://github.com/ninenines/cowboy.git 2.0.0-pre.3
 
 SHELL_OPTS = \
 	-boot start_sasl \
