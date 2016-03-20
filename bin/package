@@ -18,7 +18,7 @@ DISTRIBUTOR=$(lsb_release --id --short | perl  -ne 'print lc')
 CODENAME=$(lsb_release --codename --short | perl  -ne 'print lc')
 
 APP=$(bin/app)
-ARCH=amd64
+ARCH=$(dpkg --print-architecture)
 OWNER=shortishly
 PROJECT=${OWNER}/${APP}
 URL=https://github.com/${PROJECT}
