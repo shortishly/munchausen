@@ -2,7 +2,7 @@ image: erlang
 
 before_script:
   - apt-get update
-  - apt-get -y install lsb-release ruby
+  - apt-get -y install lsb-release ruby ruby-dev
   - gem install package_cloud
   - gem install fpm
 
