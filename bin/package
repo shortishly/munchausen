@@ -14,6 +14,10 @@
 # limitations under the License.
 #
 
+LC_ALL=en_US.UTF-8
+LANG=en_US.UTF-8
+LANGUAGE=en_US.UTF-8
+
 DISTRIBUTOR=$(lsb_release --id --short | perl  -ne 'print lc')
 CODENAME=$(lsb_release --codename --short | perl  -ne 'print lc')
 
