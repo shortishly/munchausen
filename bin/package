@@ -41,13 +41,13 @@ fpm --verbose \
     -v ${VERSION} \
     --prefix ${PREFIX} .
 
-# package_cloud yank \
-#               ${PROJECT}/${DISTRIBUTOR}/${CODENAME} \
-#               ${APP}_${VERSION}_${ARCH}.deb
+package_cloud yank \
+              ${PROJECT}/${DISTRIBUTOR}/${CODENAME} \
+              ${APP}_${VERSION}_${ARCH}.deb
 
-# package_cloud push \
-#               ${PROJECT}/${DISTRIBUTOR}/${CODENAME} \
-#               ${APP}_${VERSION}_${ARCH}.deb
+package_cloud push \
+              ${PROJECT}/${DISTRIBUTOR}/${CODENAME} \
+              ${APP}_${VERSION}_${ARCH}.deb
 
 # curl -H "Content-Type: application/json" \
 #      --data '{"source_type": "Branch", "source_name": "master"}' \
