@@ -1,0 +1,17 @@
+image: erlang
+
+before_script:
+  - apt-get update
+  - apt-get -y install lsb-release ruby
+  - gem install package_cloud
+
+stages:
+  - build
+
+app:
+  stage: build
+  script:
+    - make
+    - bin/package
+  only:
+    - master
