@@ -14,7 +14,8 @@
 # limitations under the License.
 #
 
-LANG=en_US.utf8
+${LANG:=en_US.utf8}
+export LANG
 
 DISTRIBUTOR=$(lsb_release --id --short | perl  -ne 'print lc')
 CODENAME=$(lsb_release --codename --short | perl  -ne 'print lc')

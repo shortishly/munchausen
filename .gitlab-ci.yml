@@ -4,7 +4,7 @@ before_script:
   - apt-get update
   - apt-get -y install lsb-release ruby ruby-dev locales
   - echo "en_US.UTF-8 UTF-8">/etc/locale.gen
-  - locale-gen --purge en_US.UTF-8
+  - locale-gen
   - update-locale LANG=en_US.utf8
   - gem install package_cloud
   - gem install fpm
