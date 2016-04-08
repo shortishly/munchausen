@@ -14,11 +14,14 @@
 # limitations under the License.
 #
 
+${LANG:=en_US.utf8}
+export LANG
+
 DISTRIBUTOR=$(lsb_release --id --short | perl  -ne 'print lc')
 CODENAME=$(lsb_release --codename --short | perl  -ne 'print lc')
 
 APP=$(bin/app)
-ARCH=amd64
+ARCH=$(dpkg --print-architecture)
 OWNER=shortishly
 PROJECT=${OWNER}/${APP}
 URL=https://github.com/${PROJECT}
@@ -49,7 +52,7 @@ package_cloud push \
               ${PROJECT}/${DISTRIBUTOR}/${CODENAME} \
               ${APP}_${VERSION}_${ARCH}.deb
 
-curl -H "Content-Type: application/json" \
-     --data '{"source_type": "Branch", "source_name": "master"}' \
-     -X POST \
-     https://registry.hub.docker.com/u/${PROJECT}/trigger/${DOCKER_TRIGGER}/
+# curl -H "Content-Type: application/json" \
+#      --data '{"source_type": "Branch", "source_name": "master"}' \
+#      -X POST \
+#      https://registry.hub.docker.com/u/${PROJECT}/trigger/${DOCKER_TRIGGER}/

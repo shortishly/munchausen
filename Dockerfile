@@ -12,29 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM ubuntu:precise
+FROM debian:jessie
 MAINTAINER Peter Morgan <peter.james.morgan@gmail.com>
 
 ENV TZ=GMT
 ENV CODE_LOADING_MODE=interactive
 
-EXPOSE 80
+EXPOSE 80 8080
 
-VOLUME ["/opt/munchausen/priv/etc"]
-ENTRYPOINT ["/opt/munchausen/bin/munchausen"]
+ENTRYPOINT ["/opt/bin/munchausen"]
 CMD ["foreground"]
 
-RUN apt-get update && apt-get install -y \
-    wget
-
-RUN wget \
-    --no-check-certificate \
-    https://packagecloud.io/install/repositories/shortishly/munchausen/script.deb.sh
-
-RUN chmod u+x script.deb.sh
-RUN ./script.deb.sh
-
-RUN apt-get update && apt-get install -y \
-    munchausen
-
-RUN rm -rf /var/lib/apt/lists/*
+ADD _rel/munchausen/ /opt/
