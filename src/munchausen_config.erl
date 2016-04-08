@@ -22,13 +22,18 @@
 -export([resources/1]).
 
 port(http) ->
-    get_env(http_port, 80).
+    envy:get_integer(munchausen, http_port, default(80)).
 
 enabled(http) ->
-    get_env(http_enabled, false).
+    envy:get_boolean(munchausen, http_enabled, default(true)).
 
 acceptors(http) ->
-    100.
+    envy:get_integer(munchausen, http_acceptors, default(100)).
+
+
+default(Default) ->
+    [os_env, app_env, {default, Default}].
+
 
 resources(http) ->
     munchausen_route:compile(
