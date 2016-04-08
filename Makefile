@@ -19,17 +19,24 @@ PROJECT_VERSION = 0.0.2
 
 DEPS = \
 	cowboy \
+	envy \
 	gproc \
 	gun \
 	recon
 
+SHELL_DEPS = \
+	sync
+
 dep_cowboy = git https://github.com/ninenines/cowboy.git 2.0.0-pre.3
+dep_envy = git https://github.com/shortishly/envy.git master
 
 SHELL_OPTS = \
 	-boot start_sasl \
 	-config dev.config \
+	-name $(PROJECT) \
 	-s $(PROJECT) \
 	-s rb \
-	-sname $(PROJECT)
+	-s sync \
+	-setcookie $(PROJECT)
 
 include erlang.mk

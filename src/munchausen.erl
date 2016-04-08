@@ -17,7 +17,6 @@
 
 -export([get_env/1]).
 -export([get_env/2]).
--export([make/0]).
 -export([priv_dir/0]).
 -export([priv_dir/1]).
 -export([start/0]).
@@ -29,9 +28,6 @@ get_env(Key, Strategy) ->
 
 get_env(Key) ->
     gproc:get_env(l, ?MODULE, Key).
-
-make() ->
-    make:all([load]).
 
 start() ->
     application:ensure_all_started(?MODULE).

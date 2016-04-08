@@ -16,7 +16,6 @@
 -module(munchausen_config).
 -export([acceptors/1]).
 -export([enabled/1]).
--export([make/0]).
 -export([port/1]).
 -export([resources/0]).
 -export([resources/1]).
@@ -47,9 +46,6 @@ resources() ->
 
 get_env(Name, Default) ->
     munchausen:get_env(Name, [app_env, {default, Default}]).
-
-make() ->
-    make:all([load]).
 
 resource(Resources) ->
     {ok, Tokens, _} = erl_scan:string(Resources),
