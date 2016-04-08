@@ -10,5 +10,6 @@ app:
   stage: build
   script:
     - make
+    - docker tag $(bin/release_name):$(bin/version) shortishly/$(bin/app):$(bin/version)
   only:
     - master
