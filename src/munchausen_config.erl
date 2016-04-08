@@ -21,13 +21,13 @@
 -export([resources/1]).
 
 port(http) ->
-    envy:get_integer(munchausen, http_port, default(80)).
+    envy:to_integer(munchausen, http_port, default(80)).
 
 enabled(http) ->
-    envy:get_boolean(munchausen, http_enabled, default(true)).
+    envy:to_boolean(munchausen, http_enabled, default(true)).
 
 acceptors(http) ->
-    envy:get_integer(munchausen, http_acceptors, default(100)).
+    envy:to_integer(munchausen, http_acceptors, default(100)).
 
 
 default(Default) ->
