@@ -36,8 +36,8 @@
 
 
 init(Req, #{balancer := Balancer} = State) when is_atom(Balancer) ->
-    %% When balancer is an atom we assume that it is actually module
-    %% name we use the pick/2 function
+    %% When balancer is an atom we assume that it is a module name
+    %% where use the pick/2 function
     init(Req, State#{balancer := fun Balancer:pick/2});
 
 init(Req, #{prefix := _, balancer := _} = State) ->
