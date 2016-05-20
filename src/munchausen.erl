@@ -49,14 +49,13 @@ modules() ->
     {ok, Modules} = application:get_key(?MODULE, modules),
     Modules.
 
-
 trace() ->
     trace(true).
 
 trace(true) ->
     lists:foreach(fun code:ensure_loaded/1, modules()),
     case recon_trace:calls([m(Module) || Module <- modules()],
-                           {1000, 500},
+                           {munchausen_config:maximum(debug_event), 1000},
                            [{scope, local},
                             {pid, all}]) of
         Matches when Matches > 0 ->

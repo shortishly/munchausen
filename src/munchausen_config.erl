@@ -14,25 +14,27 @@
 
 
 -module(munchausen_config).
+
 -export([acceptors/1]).
 -export([enabled/1]).
+-export([maximum/1]).
 -export([port/1]).
 -export([resources/0]).
 -export([resources/1]).
 
 port(http) ->
-    envy:to_integer(munchausen, http_port, default(80)).
+    envy(to_integer, http_port, 80).
 
 enabled(http) ->
-    envy:to_boolean(munchausen, http_enabled, default(true)).
+    envy(to_boolean, http_enabled, false);
+enabled(debug) ->
+    envy(to_boolean, debug, false).
 
 acceptors(http) ->
-    envy:to_integer(munchausen, http_acceptors, default(100)).
+    envy(to_integer, http_acceptors, 100).
 
-
-default(Default) ->
-    [os_env, app_env, {default, Default}].
-
+maximum(debug_event) ->
+    envy(to_integer, debug_event, 500000).
 
 resources(http) ->
     munchausen_route:compile(
@@ -72,3 +74,10 @@ split(L1) ->
            L1),
     [{dot, _} = Dot | T] = L1 -- L2,
     [L2 ++ [Dot] | split(T)].
+
+
+envy(To, Name, Default) ->
+    envy:To(munchausen, Name, default(Default)).
+
+default(Default) ->
+    [os_env, app_env, {default, Default}].

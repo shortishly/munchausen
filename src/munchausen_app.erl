@@ -23,11 +23,12 @@ start(_Type, _Args) ->
     case munchausen_config:enabled(http) of
         true ->
             try
+                [munchausen:trace(true) || munchausen_config:enabled(debug)],
                 {ok, Sup} = munchausen_sup:start_link(),
                 {ok, Sup, #{listeners => [start_http(http)]}}
             catch
                 _:Reason ->
-                    {error, Reason}
+                    {error, {Reason, erlang:get_stacktrace()}}
             end;
 
         false ->
