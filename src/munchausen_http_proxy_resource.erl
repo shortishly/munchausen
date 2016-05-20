@@ -50,6 +50,7 @@ init(Req0, #{prefix := Prefix, balancer := Balancer} = State) ->
                      Req0,
                      State#{origin => Origin,
                             monitor => Monitor,
+                            qs => cowboy_req:qs(Req0),
                             path => Path}};
 
                 [<<"websocket">>] ->
@@ -57,6 +58,7 @@ init(Req0, #{prefix := Prefix, balancer := Balancer} = State) ->
                      Req0,
                      State#{origin => Origin,
                             monitor => Monitor,
+                            qs => cowboy_req:qs(Req0),
                             path => Path}}
             end
     end;
@@ -64,18 +66,17 @@ init(Req0, #{prefix := Prefix, balancer := Balancer} = State) ->
 init(Req0, #{balancer := _} = State) ->
     init(Req0, State#{prefix => <<>>}).
 
-
-
-info({gun_up, Origin, _}, Req0, #{path := Path, origin := Origin} = State) ->
+info({gun_up, Origin, _}, Req0, #{path := Path, qs := QS, origin := Origin} = State) ->
     {ok,
      Req0,
-     maybe_request_body(Req0,
-                        State#{
-                          request => gun:request(
-                                       Origin,
-                                       cowboy_req:method(Req0),
-                                       Path,
-                                       cowboy_req:headers(Req0))})};
+     maybe_request_body(
+       Req0,
+       State#{
+         request => gun:request(
+                      Origin,
+                      cowboy_req:method(Req0),
+                      path(Path, QS),
+                      cowboy_req:headers(Req0))})};
 
 info({gun_data, _, _, nofin, Data}, Req, State) ->
     case cowboy_req:chunk(Data, Req) of
@@ -180,3 +181,8 @@ request_body(Req, State) ->
         {more, Data, _} ->
             self() ! {request_body, #{more => Data}}
     end.
+
+path(Path, <<>>) ->
+    Path;
+path(Path, QS) ->
+    <<Path/bytes, "?", QS/bytes>>.

@@ -19,17 +19,23 @@ PROJECT_VERSION = 0.0.2
 
 DEPS = \
 	cowboy \
+	envy \
 	gproc \
 	gun \
 	recon
 
-dep_cowboy = git https://github.com/ninenines/cowboy.git master
+dep_cowboy = git https://github.com/ninenines/cowboy.git 2.0.0-pre.3
+dep_envy = git https://github.com/shortishly/envy.git master
+
+SHELL_DEPS = \
+	sync
 
 SHELL_OPTS = \
 	-boot start_sasl \
 	-config dev.config \
 	-s $(PROJECT) \
 	-s rb \
-	-sname $(PROJECT)
+	-s sync
+
 
 include erlang.mk

@@ -14,21 +14,27 @@
 
 
 -module(munchausen_config).
+
 -export([acceptors/1]).
 -export([enabled/1]).
--export([make/0]).
+-export([maximum/1]).
 -export([port/1]).
 -export([resources/0]).
 -export([resources/1]).
 
 port(http) ->
-    get_env(http_port, 80).
+    envy(to_integer, http_port, 80).
 
 enabled(http) ->
-    get_env(http_enabled, false).
+    envy(to_boolean, http_enabled, false);
+enabled(debug) ->
+    envy(to_boolean, debug, false).
 
 acceptors(http) ->
-    100.
+    envy(to_integer, http_acceptors, 100).
+
+maximum(debug_event) ->
+    envy(to_integer, debug_event, 500000).
 
 resources(http) ->
     munchausen_route:compile(
@@ -47,9 +53,6 @@ resources() ->
 
 get_env(Name, Default) ->
     munchausen:get_env(Name, [app_env, {default, Default}]).
-
-make() ->
-    make:all([load]).
 
 resource(Resources) ->
     {ok, Tokens, _} = erl_scan:string(Resources),
@@ -71,3 +74,10 @@ split(L1) ->
            L1),
     [{dot, _} = Dot | T] = L1 -- L2,
     [L2 ++ [Dot] | split(T)].
+
+
+envy(To, Name, Default) ->
+    envy:To(munchausen, Name, default(Default)).
+
+default(Default) ->
+    [os_env, app_env, {default, Default}].

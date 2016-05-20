@@ -17,7 +17,6 @@
 
 -export([get_env/1]).
 -export([get_env/2]).
--export([make/0]).
 -export([priv_dir/0]).
 -export([priv_dir/1]).
 -export([start/0]).
@@ -29,9 +28,6 @@ get_env(Key, Strategy) ->
 
 get_env(Key) ->
     gproc:get_env(l, ?MODULE, Key).
-
-make() ->
-    make:all([load]).
 
 start() ->
     application:ensure_all_started(?MODULE).
@@ -53,14 +49,13 @@ modules() ->
     {ok, Modules} = application:get_key(?MODULE, modules),
     Modules.
 
-
 trace() ->
     trace(true).
 
 trace(true) ->
     lists:foreach(fun code:ensure_loaded/1, modules()),
     case recon_trace:calls([m(Module) || Module <- modules()],
-                           {1000, 500},
+                           {munchausen_config:maximum(debug_event), 1000},
                            [{scope, local},
                             {pid, all}]) of
         Matches when Matches > 0 ->
