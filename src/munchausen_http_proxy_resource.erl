@@ -59,11 +59,11 @@ init(Req, #{prefix := _, balancer := _} = State) ->
                 true ->
                     %% Web socket upgrade in header switch to
                     %% websocket loop.
-                    loop(cowboy_websocket, Req, State, Origin, Monitor, Path, QS);
+                    loop(cowboy_websocket, Req, State, Endpoint, Port, Origin, Monitor, Path, QS);
 
                 false ->
                     %% Otherwise remain in normal http loop.
-                    loop(cowboy_loop, Req, State, Origin, Monitor, Path, QS)
+                    loop(cowboy_loop, Req, State, Endpoint, Port, Origin, Monitor, Path, QS)
             end
     end;
 
@@ -72,10 +72,15 @@ init(Req, #{balancer := _} = State) ->
     init(Req, State#{prefix => <<>>}).
 
 
-info({gun_up, Origin, _}, Req, #{path := Path, qs := QS, origin := Origin} = State) ->
+info({gun_up, Origin, _},
+     Req,
+     #{path := Path,
+       endpoint := Endpoint,
+       qs := QS,
+       origin := Origin} = State) ->
     %% A http connection to origin is up and available, proxy
     %% client request through to the origin.
-    {ok, Req, maybe_request_body(Req, State, Origin, Path, QS)};
+    {ok, Req, maybe_request_body(Req, State, Origin, Endpoint, Path, QS)};
 
 info({gun_response, _, _, nofin, Status, Headers}, Req, State) ->
     %% We have an initial http response from the origin together with
@@ -232,24 +237,41 @@ not_found(Req) ->
     TextPlain = [<<"content-type">>,  <<"text/plain">>],
     cowboy_req:reply(404, TextPlain, "Not found.", Req).
 
-loop(Handler, Req, State, Origin, Monitor, Path, QS) ->
+loop(Handler, Req, State, Host, Port, Origin, Monitor, Path, QS) ->
     %% We are either in the cowboy_websocket or cowboy_loop, the
     %% request and basic state are common between both loops.
-    {Handler, Req, State#{origin => Origin, monitor => Monitor, path => Path, qs => QS}}.
+    {Handler,
+     Req,
+     State#{origin => Origin,
+            endpoint => #{host => Host, port => Port},
+            monitor => Monitor,
+            path => Path,
+            qs => QS}}.
 
 
-maybe_request_body(Req, State, Origin, Path, QS) ->
+maybe_request_body(Req, State, Origin, Endpoint, Path, QS) ->
     %% Proxy the http request through to the origin, and start
     %% streaming the request body from the client is there is one.
-    maybe_request_body(Req, State#{request => proxy(Req, Origin, Path, QS)}).
+    maybe_request_body(Req, State#{request => proxy(Req, Origin, Endpoint, Path, QS)}).
 
 
-proxy(Req, Origin, Path, QS) ->
+proxy(Req, Origin, #{host := Host, port := Port}, Path, QS) ->
     %% Act as a proxy for a http request to the origin from the
     %% client.
     Method = cowboy_req:method(Req),
-    Headers = cowboy_req:headers(Req),
-    gun:request(Origin, Method, path(Path, QS), Headers).
+    Headers = lists:keyreplace(
+                <<"host">>,
+                1,
+                cowboy_req:headers(Req),
+                {<<"host">>,
+                 <<(any:to_binary(Host))/bytes,
+                   ":",
+                   (any:to_binary(Port))/bytes>>}),
+    request(Origin, Method, path(Path, QS), Headers).
+
+request(Origin, Method, PathQS, Headers) ->
+    gun:request(Origin, Method, PathQS, Headers).
+    
 
 path(Path, <<>>) ->
     Path;
