@@ -22,20 +22,22 @@ DEPS = \
 	envy \
 	gproc \
 	gun \
-	recon
-
-dep_cowboy = git https://github.com/ninenines/cowboy.git 2.0.0-pre.3
-dep_envy = git https://github.com/shortishly/envy.git master
+	recon \
+	shelly
 
 SHELL_DEPS = \
 	sync
 
+dep_cowboy = git https://github.com/ninenines/cowboy.git 2.0.0-pre.3
+dep_envy = git https://github.com/shortishly/envy.git master
+dep_shelly = git https://github.com/shortishly/shelly.git master
+
 SHELL_OPTS = \
 	-boot start_sasl \
 	-config dev.config \
+	-name $(PROJECT) \
 	-s $(PROJECT) \
 	-s rb \
 	-s sync
-
 
 include erlang.mk

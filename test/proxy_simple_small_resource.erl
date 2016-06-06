@@ -1,4 +1,3 @@
-%% -*- mode: erlang -*-
 %% Copyright (c) 2012-2016 Peter Morgan <peter.james.morgan@gmail.com>
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,18 +12,12 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
-[
- {kernel, [
-           {error_logger, {file, "log/kernel.log"}}
-          ]},
+-module(proxy_simple_small_resource).
 
- {sasl, [{sasl_error_logger, {file, "log/sasl.log"}},
-         {error_logger_mf_dir,"log"},
-         {error_logger_mf_maxbytes,10485760},
-         {error_logger_mf_maxfiles, 10},
-         {errlog_type, all}
-        ]},
+-export([init/2]).
 
- {munchausen, [{http_port, 8080},
-               {http_enabled, true}]}
-].
+init(Req, State) ->
+    Req2 = cowboy_req:reply(200, [
+                                  {<<"content-type">>, <<"text/plain">>}
+                                 ], <<"Hello world!">>, Req),
+    {ok, Req2, State}.

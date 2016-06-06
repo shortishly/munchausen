@@ -1,4 +1,3 @@
-%% -*- mode: erlang -*-
 %% Copyright (c) 2012-2016 Peter Morgan <peter.james.morgan@gmail.com>
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +12,16 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
-{["src/*"],
- [{i, "include"},
-  {outdir, "ebin"},
-  debug_info]
-}.
+-module(proxy_echo_post_resource).
+
+-export([init/2]).
+
+init(Req0, State) ->
+    case cowboy_req:body(Req0) of
+        {ok, Body, Req1} ->
+            Req2 = cowboy_req:reply(
+                     200, [
+                           {<<"content-type">>, <<"text/plain">>}
+                          ], Body, Req1),
+            {ok, Req2, State}
+    end.
