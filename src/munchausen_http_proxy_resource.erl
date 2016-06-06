@@ -92,7 +92,7 @@ info({gun_data, _, _, fin, Data}, Req, State) ->
     {stop, Req, State};
 
 info({gun_response, _, _, nofin, Status, Headers}, Req0, State) ->
-    Req1 = cowboy_req:chunked_reply(Status, Headers, Req0),
+    Req1 = cowboy_req:chunked_reply(Status, lists:keydelete(<<"content-length">>, 1, Headers), Req0),
     {ok, Req1, State};
 
 info({gun_response, _, _, fin, Status, Headers}, Req0, State) ->
