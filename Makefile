@@ -15,7 +15,7 @@
 #
 PROJECT = munchausen
 PROJECT_DESCRIPTION = HTTP and Websocket proxy
-PROJECT_VERSION = 0.3.0
+PROJECT_VERSION = 0.3.1
 
 DEPS = \
 	cowboy \
