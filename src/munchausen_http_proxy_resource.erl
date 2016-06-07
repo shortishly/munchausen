@@ -327,10 +327,14 @@ inet_ip(Endpoint) ->
             Endpoint;
 
         {error, einval} ->
-            {ok,
-             #hostent{
-                h_addrtype = inet,
-                h_addr_list = Addresses}} = inet:gethostbyname(
-                                              Endpoint),
-            inet:ntoa(munchausen_util:pick_one(Addresses))
+            case inet_res:gethostbyname(Endpoint) of
+                {ok,
+                 #hostent{
+                    h_addrtype = inet,
+                    h_addr_list = Addresses}} ->
+                    inet:ntoa(munchausen_util:pick_one(Addresses));
+
+                {error, _} ->
+                    error([Endpoint])
+            end
     end.
