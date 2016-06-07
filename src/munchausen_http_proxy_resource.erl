@@ -22,6 +22,8 @@
 -export([websocket_handle/3]).
 -export([websocket_info/3]).
 
+-include_lib("kernel/include/inet.hrl").
+
 
 %% munchaussen is a http proxy that can cope with chunked responses
 %% and web socket upgrades - the kind of things a modern client might
@@ -52,7 +54,7 @@ init(Req, #{prefix := _, balancer := _} = State) ->
             %% Open and monitor a http connection to the origin
             %% endpoint, upgrading the request if headers are present
             %% to a web socket.
-            {ok, Origin} = gun:open(Endpoint, Port, #{transport => tcp}),
+            {ok, Origin} = gun:open(inet_ip(Endpoint), Port, #{transport => tcp}),
             Monitor = erlang:monitor(process, Origin),
             QS = cowboy_req:qs(Req),
             case is_ws_upgrade(Req) of
@@ -317,4 +319,18 @@ request_body(Req, State) ->
             %% We have part of the request body, but there is still
             %% more waiting for us.
             self() ! {request_body, #{more => Data}}
+    end.
+
+inet_ip(Endpoint) ->
+    case inet:parse_ipv4_address(Endpoint) of
+        {ok, _} ->
+            Endpoint;
+
+        {error, einval} ->
+            {ok,
+             #hostent{
+                h_addrtype = inet,
+                h_addr_list = Addresses}} = inet:gethostbyname(
+                                              Endpoint),
+            inet:ntoa(munchausen_util:pick_one(Addresses))
     end.
