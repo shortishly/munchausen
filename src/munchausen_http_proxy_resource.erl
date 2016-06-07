@@ -82,10 +82,22 @@ info({gun_up, Origin, _},
     %% client request through to the origin.
     {ok, Req, maybe_request_body(Req, State, Origin, Endpoint, Path, QS)};
 
-info({gun_response, _, _, nofin, Status, Headers}, Req, State) ->
+info({gun_response, _, _, nofin, Status, Headers}, Req, State) when (Status div 100) == 2 ->
     %% We have an initial http response from the origin together with
     %% some headers to forward to the client.
     {ok, cowboy_req:chunked_reply(Status, Headers, Req), State};
+
+info({gun_response, _, _, nofin, Status, Headers}, Req, State) ->
+    case lists:keyfind(<<"content-length">>, 1, Headers) of
+        false ->
+            %% no content length, assume that we are done (despite
+            %% nofin)
+            {stop, cowboy_req:reply(Status, Headers, Req), State};
+        _ ->
+            %% We have an initial http response from the origin together with
+            %% some headers to forward to the client.
+            {ok, cowboy_req:chunked_reply(Status, Headers, Req), State}
+    end;
 
 info({gun_response, _, _, fin, Status, Headers}, Req, State) ->
     %% short and sweeet, we have final http response from the origin
