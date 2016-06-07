@@ -23,8 +23,8 @@ start(_Type, _Args) ->
     case munchausen_config:enabled(http) of
         true ->
             try
-                [munchausen:trace(true) || munchausen_config:enabled(debug)],
                 {ok, Sup} = munchausen_sup:start_link(),
+                [munchausen:trace(true) || munchausen_config:enabled(debug)],
                 {ok, Sup, #{listeners => [start_http(http)]}}
             catch
                 _:Reason ->
