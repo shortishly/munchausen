@@ -85,7 +85,7 @@ info({gun_up, Origin, _},
 info({gun_response, _, _, nofin, Status, Headers}, Req, State) ->
     %% We have an initial http response from the origin together with
     %% some headers to forward to the client.
-    {ok, cowboy_req:chunked_reply(Status, lists:keydelete(<<"content-length">>, 1, Headers), Req), State};
+    {ok, cowboy_req:chunked_reply(Status, Headers, Req), State};
 
 info({gun_response, _, _, fin, Status, Headers}, Req, State) ->
     %% short and sweeet, we have final http response from the origin
