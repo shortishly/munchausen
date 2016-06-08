@@ -447,19 +447,20 @@ increment(Key) ->
 metrics() ->
     lists:foldl(
       fun
-          (#?MODULE{key = #{request := Request, endpoint := Endpoint, status := Status, info := response}, value = Value}, #{requests := Requests} = A) ->
+          (#?MODULE{key = #{request := Request, endpoint := Endpoint, info := response}, value = Value}, #{requests := Requests} = A) ->
 
               RequestURI = uri(Request),
-              EndpointURI = uri(Endpoint#{path => <<"/">>}),
+              EndpointURI = uri(Endpoint),
 
-              Default = #{EndpointURI => #{responses => #{}}},
+              case maps:find(RequestURI, Requests) of
+                  {ok, #{EndpointURI := Metric} = Endpoints} ->
+                      A#{requests => Requests#{RequestURI => Endpoints#{EndpointURI => Metric + Value}}};
 
-              case maps:get(RequestURI, Requests, Default) of
-                  #{EndpointURI := #{responses := Responses} = Metrics} = Endpoints ->
-                      A#{requests => Requests#{RequestURI => Endpoints#{EndpointURI => Metrics#{responses := Responses#{Status => Value}}}}};
+                  {ok, Endpoints} ->
+                      A#{requests => Requests#{RequestURI => Endpoints#{EndpointURI => Value}}};
 
-                  Endpoints ->
-                      A#{requests => Requests#{RequestURI => Endpoints#{EndpointURI => #{responses => #{Status => Value}}}}}
+                  error ->
+                      A#{requests => Requests#{RequestURI => #{EndpointURI => Value}}}
               end;
 
           (#?MODULE{}, A) ->
@@ -468,5 +469,5 @@ metrics() ->
       #{requests => #{}},
       ets:tab2list(?MODULE)).
 
-uri(#{host := Host, path := Path, port := Port}) ->
-    <<"tcp://", (any:to_binary(Host))/bytes, ":", (any:to_binary(Port))/bytes, Path/bytes>>.
+uri(#{host := Host, port := Port}) ->
+    <<"tcp://", (any:to_binary(Host))/bytes, ":", (any:to_binary(Port))/bytes>>.
