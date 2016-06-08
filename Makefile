@@ -15,10 +15,11 @@
 #
 PROJECT = munchausen
 PROJECT_DESCRIPTION = HTTP and Websocket proxy
-PROJECT_VERSION = 0.5.0
+PROJECT_VERSION = 0.6.0
 
 DEPS = \
 	cowboy \
+	crown \
 	envy \
 	gproc \
 	gun \
@@ -29,13 +30,13 @@ SHELL_DEPS = \
 	sync
 
 dep_cowboy = git https://github.com/ninenines/cowboy.git 2.0.0-pre.3
+dep_crown = git https://github.com/shortishly/crown.git master
 dep_envy = git https://github.com/shortishly/envy.git master
 dep_shelly = git https://github.com/shortishly/shelly.git master
 
 SHELL_OPTS = \
 	-boot start_sasl \
 	-config dev.config \
-	-name $(PROJECT) \
 	-s $(PROJECT) \
 	-s rb \
 	-s sync
