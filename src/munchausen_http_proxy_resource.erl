@@ -53,8 +53,9 @@ init(Req, #{balancer := Balancer} = State) when is_atom(Balancer) ->
     init(Req, State#{balancer := fun Balancer:pick/2});
 
 init(Req, #{prefix := _, balancer := _} = State) ->
-    URL = <<(cowboy_req:host_url(Req))/bytes,
-            (cowboy_req:path(Req))/bytes>>,
+    URL = #{host => cowboy_req:host_url(Req),
+            path => cowboy_req:path(Req),
+            port => cowboy_req:port(Req)},
 
     increment(#{request => URL}),
 
@@ -446,8 +447,24 @@ increment(Key) ->
 metrics() ->
     lists:foldl(
       fun
-          (#?MODULE{key = Key, value = Value}, A) ->
-              A#{Key => Value}
+          (#?MODULE{key = #{request := Request, endpoint := Endpoint, status := Status, info := response}, value = Value}, A) ->
+
+              RequestURI = uri(Request),
+              EndpointURI = uri(Endpoint),
+
+              Default = #{EndpointURI => #{responses => #{}}},
+
+              #{EndpointURI := #{responses := Responses} = Metrics} = Endpoints = maps:get(
+                                                                                    RequestURI,
+                                                                                    A,
+                                                                                    Default),
+              A#{RequestURI => Endpoints#{EndpointURI => Metrics#{responses := Responses#{Status => Value}}}};
+
+          (#?MODULE{}, A) ->
+              A
       end,
       #{},
       ets:tab2list(?MODULE)).
+
+uri(#{host := Host, path := Path, port := Port}) ->
+    <<Host/bytes, ":", (any:to_binary(Port))/bytes, Path/bytes>>.
