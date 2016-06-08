@@ -53,7 +53,7 @@ init(Req, #{balancer := Balancer} = State) when is_atom(Balancer) ->
     init(Req, State#{balancer := fun Balancer:pick/2});
 
 init(Req, #{prefix := _, balancer := _} = State) ->
-    URL = #{host => cowboy_req:host_url(Req),
+    URL = #{host => cowboy_req:host(Req),
             path => cowboy_req:path(Req),
             port => cowboy_req:port(Req)},
 
