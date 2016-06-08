@@ -467,4 +467,4 @@ metrics() ->
       ets:tab2list(?MODULE)).
 
 uri(#{host := Host, path := Path, port := Port}) ->
-    <<Host/bytes, ":", (any:to_binary(Port))/bytes, Path/bytes>>.
+    <<(any:to_binary(Host))/bytes, ":", (any:to_binary(Port))/bytes, Path/bytes>>.
