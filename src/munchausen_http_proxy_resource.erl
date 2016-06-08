@@ -454,7 +454,7 @@ metrics() ->
 
               Default = #{EndpointURI => #{responses => #{}}},
 
-              case maps:get(RequestURI, A, Default) of
+              case maps:get(RequestURI, Requests, Default) of
                   #{EndpointURI := #{responses := Responses} = Metrics} = Endpoints ->
                       A#{requests => Requests#{RequestURI => Endpoints#{EndpointURI => Metrics#{responses := Responses#{Status => Value}}}}};
 
