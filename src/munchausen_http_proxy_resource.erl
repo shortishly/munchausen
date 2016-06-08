@@ -15,9 +15,9 @@
 
 -module(munchausen_http_proxy_resource).
 
-
 -export([info/3]).
 -export([init/2]).
+-export([metrics/0]).
 -export([terminate/3]).
 -export([websocket_handle/3]).
 -export([websocket_info/3]).
@@ -37,23 +37,45 @@
 %% any response as chunks.
 
 
+-on_load(on_load/0).
+
+-record(?MODULE, {
+           key,
+           value
+          }).
+
+on_load() ->
+    crown_table:reuse(?MODULE, set).
+
 init(Req, #{balancer := Balancer} = State) when is_atom(Balancer) ->
     %% When balancer is an atom we assume that it is a module name
     %% where use the pick/2 function
     init(Req, State#{balancer := fun Balancer:pick/2});
 
 init(Req, #{prefix := _, balancer := _} = State) ->
+    URL = <<(cowboy_req:host_url(Req))/bytes,
+            (cowboy_req:path(Req))/bytes>>,
+
+    increment(#{request => URL}),
+
     %% Attempt to load balance the request
     case balance(Req, State) of
         not_found ->
             %% No endpoint found for this request, reply with
             %% not found 404.
+            increment(#{request => URL, status => 404}),
             {stop, not_found(Req), undefined};
 
         #{host := Endpoint, port := Port, path := Path} ->
             %% Open and monitor a http connection to the origin
             %% endpoint, upgrading the request if headers are present
             %% to a web socket.
+
+            increment(#{request => URL,
+                        endpoint => #{host => Endpoint,
+                                      port => Port,
+                                      path => Path}}),
+
             {ok, Origin} = gun:open(inet_ip(Endpoint), Port, #{transport => tcp}),
             Monitor = erlang:monitor(process, Origin),
             QS = cowboy_req:qs(Req),
@@ -61,11 +83,29 @@ init(Req, #{prefix := _, balancer := _} = State) ->
                 true ->
                     %% Web socket upgrade in header switch to
                     %% websocket loop.
-                    loop(cowboy_websocket, Req, State, Endpoint, Port, Origin, Monitor, Path, QS);
+                    loop(
+                      cowboy_websocket,
+                      Req,
+                      State#{url => URL},
+                      Endpoint,
+                      Port,
+                      Origin,
+                      Monitor,
+                      Path,
+                      QS);
 
                 false ->
                     %% Otherwise remain in normal http loop.
-                    loop(cowboy_loop, Req, State, Endpoint, Port, Origin, Monitor, Path, QS)
+                    loop(
+                      cowboy_loop,
+                      Req,
+                      State#{url => URL},
+                      Endpoint,
+                      Port,
+                      Origin,
+                      Monitor,
+                      Path,
+                      QS)
             end
     end;
 
@@ -76,20 +116,44 @@ init(Req, #{balancer := _} = State) ->
 
 info({gun_up, Origin, _},
      Req,
-     #{path := Path,
+     #{url := URL,
        endpoint := Endpoint,
+       path := Path,
        qs := QS,
        origin := Origin} = State) ->
+
+    increment(#{request => URL,
+                endpoint => Endpoint,
+                info => up}),
+
     %% A http connection to origin is up and available, proxy
     %% client request through to the origin.
     {ok, Req, maybe_request_body(Req, State, Origin, Endpoint, Path, QS)};
 
-info({gun_response, _, _, nofin, Status, Headers}, Req, State) when (Status div 100) == 2 ->
+info({gun_response, _, _, nofin, Status, Headers},
+     Req,
+     #{url := URL,
+       endpoint := Endpoint} = State) when (Status div 100) == 2 ->
     %% We have an initial http response from the origin together with
     %% some headers to forward to the client.
+
+    increment(#{request => URL,
+                endpoint => Endpoint,
+                info => response,
+                status => Status}),
+
     {ok, cowboy_req:chunked_reply(Status, Headers, Req), State};
 
-info({gun_response, _, _, nofin, Status, Headers}, Req, State) ->
+info({gun_response, _, _, nofin, Status, Headers},
+     Req,
+     #{url := URL,
+       endpoint := Endpoint} = State) ->
+
+    increment(#{request => URL,
+                endpoint => Endpoint,
+                info => response,
+                status => Status}),
+
     case lists:keyfind(<<"content-length">>, 1, Headers) of
         false ->
             %% no content length, assume that we are done (despite
@@ -101,14 +165,31 @@ info({gun_response, _, _, nofin, Status, Headers}, Req, State) ->
             {ok, cowboy_req:chunked_reply(Status, Headers, Req), State}
     end;
 
-info({gun_response, _, _, fin, Status, Headers}, Req, State) ->
+info({gun_response, _, _, fin, Status, Headers},
+     Req,
+     #{url := URL,
+       endpoint := Endpoint} = State) ->
     %% short and sweeet, we have final http response from the origin
     %% with just status and headers and no response body.
+
+    increment(#{request => URL,
+                endpoint => Endpoint,
+                info => response,
+                status => Status}),
+
     {stop, cowboy_req:reply(Status, Headers, Req), State};
 
-info({gun_data, _, _, nofin, Data}, Req, State) ->
+info({gun_data, _, _, nofin, Data},
+     Req,
+     #{url := URL,
+       endpoint := Endpoint} = State) ->
     %% we have received a response body chunk from the origin,
     %% chunk and forward to the client.
+
+    increment(#{request => URL,
+                endpoint => Endpoint,
+                info => data}),
+
     case cowboy_req:chunk(Data, Req) of
         ok ->
             %% response has been chunked OK to the client, continue in
@@ -121,10 +202,18 @@ info({gun_data, _, _, nofin, Data}, Req, State) ->
             {stop, Req, State}
     end;
 
-info({gun_data, _, _, fin, Data}, Req, State) ->
+info({gun_data, _, _, fin, Data},
+     Req,
+     #{url := URL,
+       endpoint := Endpoint} = State) ->
     %% we received a final response body chunk from the origin,
     %% chunk and forward to the client - and then hang up the
     %% connection.
+
+    increment(#{request => URL,
+                endpoint => Endpoint,
+                info => data}),
+
     cowboy_req:chunk(Data, Req),
     {stop, Req, State};
 
@@ -144,11 +233,23 @@ info({request_body, #{more := More}}, Req, #{origin := Origin,
     gun:data(Origin, Request, nofin, More),
     {ok, Req, request_body(Req, State)};
 
-info({'DOWN', Monitor, _, _, _}, Req, #{monitor := Monitor} = State) ->
+info({'DOWN', Monitor, _, _, _},
+     Req,
+     #{monitor := Monitor,
+       url := URL,
+       endpoint := Endpoint} = State) ->
     %% whoa, our monitor has noticed the http connection to the origin
     %% is emulating a Norwegian Blue parrot, time to declare to the
     %% client that the gateway has turned bad.
-    {stop, cowboy_req:reply(502, Req), State}.
+
+    BadGateway = 502,
+
+    increment(#{request => URL,
+                endpoint => Endpoint,
+                info => response,
+                status => BadGateway}),
+
+    {stop, cowboy_req:reply(BadGateway, Req), State}.
 
 
 terminate(_Reason, _Req, #{origin := Origin, monitor := Monitor}) ->
@@ -257,7 +358,7 @@ loop(Handler, Req, State, Host, Port, Origin, Monitor, Path, QS) ->
     {Handler,
      Req,
      State#{origin => Origin,
-            endpoint => #{host => Host, port => Port},
+            endpoint => #{host => Host, path => Path, port => Port},
             monitor => Monitor,
             path => Path,
             qs => QS}}.
@@ -338,3 +439,15 @@ inet_ip(Endpoint) ->
                     error([Endpoint])
             end
     end.
+
+increment(Key) ->
+    ets:update_counter(?MODULE, Key, 1, #?MODULE{value = 0}).
+
+metrics() ->
+    lists:foldl(
+      fun
+          (#?MODULE{key = Key, value = Value}, A) ->
+              A#{Key => Value}
+      end,
+      #{},
+      ets:tab2list(?MODULE)).
